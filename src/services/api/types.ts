@@ -85,6 +85,8 @@ export interface Message {
   updatedAt?: string
   replyTo?: string
   metadata?: Record<string, any>
+  name: string
+  message: string
 }
 
 /**
