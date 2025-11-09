@@ -1,5 +1,13 @@
-import { WelcomeScreen } from "@/screens/WelcomeScreen"
+import { Redirect } from "expo-router"
+
+import { useAuth } from "@/context/AuthContext"
 
 export default function Index() {
-  return <WelcomeScreen />
+  const { isAuthenticated } = useAuth()
+
+  if (!isAuthenticated) {
+    return <Redirect href="/login" />
+  }
+
+  return <Redirect href="/rooms" />
 }
