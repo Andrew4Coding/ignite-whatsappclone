@@ -1,13 +1,12 @@
-import { ComponentType, FC, useEffect, useMemo, useRef, useState } from "react"
+import { FC, useEffect, useRef, useState } from "react"
 // eslint-disable-next-line no-restricted-imports
 import { TextInput, TextStyle, ViewStyle } from "react-native"
 import { useRouter } from "expo-router"
 
 import { Button } from "@/components/Button"
-import { PressableIcon } from "@/components/Icon"
 import { Screen } from "@/components/Screen"
 import { Text } from "@/components/Text"
-import { TextField, type TextFieldAccessoryProps } from "@/components/TextField"
+import { TextField } from "@/components/TextField"
 import { useAuth } from "@/context/AuthContext"
 import type { AppStackScreenProps } from "@/navigators/navigationTypes"
 import { useAppTheme } from "@/theme/context"
@@ -17,26 +16,20 @@ interface LoginScreenProps extends AppStackScreenProps<"Login"> {}
 
 export const LoginScreen: FC<LoginScreenProps> = () => {
   const router = useRouter()
-  const authPasswordInput = useRef<TextInput>(null)
+  const senderIdInput = useRef<TextInput>(null)
 
-  const [authPassword, setAuthPassword] = useState("")
-  const [isAuthPasswordHidden, setIsAuthPasswordHidden] = useState(true)
+  const [senderId, setSenderId] = useState("")
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [attemptsCount, setAttemptsCount] = useState(0)
-  const { authEmail, setAuthEmail, setAuthToken, setUserId, setUserName, validationError } =
-    useAuth()
+  const { setAuthToken, setUserId, setUserName, userName, validationError } = useAuth()
 
-  const {
-    themed,
-    theme: { colors },
-  } = useAppTheme()
+  const { themed } = useAppTheme()
 
   useEffect(() => {
-    // Here is where you could fetch credentials from keychain or storage
-    // and pre-fill the form fields.
-    setAuthEmail("ignite@infinite.red")
-    setAuthPassword("ign1teIsAwes0m3")
-  }, [setAuthEmail])
+    // Pre-fill with demo values
+    setUserName("John Doe")
+    setSenderId("") // Leave sender ID empty by default
+  }, [setUserName])
 
   const error = isSubmitted ? validationError : ""
 
@@ -49,17 +42,14 @@ export const LoginScreen: FC<LoginScreenProps> = () => {
     // Make a request to your server to get an authentication token.
     // If successful, reset the fields and set the token.
     setIsSubmitted(false)
-    setAuthPassword("")
 
-    // Extract user name from email (before @)
-    const userName = authEmail?.split("@")[0] || "User"
-
-    // Generate a user ID based on email
-    const userId = `user_${Date.now()}`
+    // Generate a random sender ID if not provided
+    const finalSenderId =
+      senderId.trim() || `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
 
     // Store user information
-    setUserId(userId)
-    setUserName(userName)
+    setUserId(finalSenderId)
+    setUserName(userName || "User")
 
     // We'll mock this with a fake token.
     setAuthToken(String(Date.now()))
@@ -68,67 +58,53 @@ export const LoginScreen: FC<LoginScreenProps> = () => {
     router.replace("/rooms")
   }
 
-  const PasswordRightAccessory: ComponentType<TextFieldAccessoryProps> = useMemo(
-    () =>
-      function PasswordRightAccessory(props: TextFieldAccessoryProps) {
-        return (
-          <PressableIcon
-            icon={isAuthPasswordHidden ? "view" : "hidden"}
-            color={colors.palette.neutral800}
-            containerStyle={props.style}
-            size={20}
-            onPress={() => setIsAuthPasswordHidden(!isAuthPasswordHidden)}
-          />
-        )
-      },
-    [isAuthPasswordHidden, colors.palette.neutral800],
-  )
-
   return (
     <Screen
       preset="auto"
       contentContainerStyle={themed($screenContentContainer)}
       safeAreaEdges={["top", "bottom"]}
     >
-      <Text testID="login-heading" tx="loginScreen:logIn" preset="heading" style={themed($logIn)} />
-      <Text tx="loginScreen:enterDetails" preset="subheading" style={themed($enterDetails)} />
+      <Text testID="login-heading" text="Welcome" preset="heading" style={themed($logIn)} />
+      <Text
+        text="Enter your details to continue"
+        preset="subheading"
+        style={themed($enterDetails)}
+      />
       {attemptsCount > 2 && (
-        <Text tx="loginScreen:hint" size="sm" weight="light" style={themed($hint)} />
+        <Text text="Please check your inputs" size="sm" weight="light" style={themed($hint)} />
       )}
 
       <TextField
-        value={authEmail}
-        onChangeText={setAuthEmail}
+        value={userName}
+        onChangeText={setUserName}
         containerStyle={themed($textField)}
-        autoCapitalize="none"
-        autoComplete="email"
+        autoCapitalize="words"
+        autoComplete="name"
         autoCorrect={false}
-        keyboardType="email-address"
-        labelTx="loginScreen:emailFieldLabel"
-        placeholderTx="loginScreen:emailFieldPlaceholder"
-        helper={error}
+        label="Name"
+        placeholder="Enter your name"
+        helper={error ? error : undefined}
         status={error ? "error" : undefined}
-        onSubmitEditing={() => authPasswordInput.current?.focus()}
+        onSubmitEditing={() => senderIdInput.current?.focus()}
       />
 
       <TextField
-        ref={authPasswordInput}
-        value={authPassword}
-        onChangeText={setAuthPassword}
+        ref={senderIdInput}
+        value={senderId}
+        onChangeText={setSenderId}
         containerStyle={themed($textField)}
         autoCapitalize="none"
-        autoComplete="password"
+        autoComplete="off"
         autoCorrect={false}
-        secureTextEntry={isAuthPasswordHidden}
-        labelTx="loginScreen:passwordFieldLabel"
-        placeholderTx="loginScreen:passwordFieldPlaceholder"
+        label="Sender ID (Optional)"
+        placeholder="Leave blank to auto-generate"
+        helper="A unique ID will be generated if left empty"
         onSubmitEditing={login}
-        RightAccessory={PasswordRightAccessory}
       />
 
       <Button
         testID="login-button"
-        tx="loginScreen:tapToLogIn"
+        text="Continue"
         style={themed($tapButton)}
         preset="reversed"
         onPress={login}
