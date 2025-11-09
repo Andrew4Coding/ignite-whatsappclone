@@ -23,7 +23,7 @@ import { useSafeAreaInsetsStyle } from "@/utils/useSafeAreaInsetsStyle"
 export default function RoomsScreen() {
   const router = useRouter()
   const { themed, theme } = useAppTheme()
-  const { isAuthenticated, userName, logout } = useAuth()
+  const { isAuthenticated } = useAuth()
 
   const [rooms, setRooms] = useState<Room[]>([])
   const [loading, setLoading] = useState(true)
@@ -38,11 +38,6 @@ export default function RoomsScreen() {
       router.replace("/login")
     }
   }, [isAuthenticated, router])
-
-  const handleLogout = useCallback(() => {
-    logout()
-    router.replace("/login")
-  }, [logout, router])
 
   const fetchRooms = useCallback(async (isRefreshing = false) => {
     if (!isRefreshing) setLoading(true)
@@ -144,26 +139,7 @@ export default function RoomsScreen() {
 
   if (loading) {
     return (
-      <Screen preset="fixed" safeAreaEdges={["top"]}>
-        <View style={themed($header)}>
-          <View style={themed($headerContent)}>
-            <Text style={themed($headerTitle)} preset="heading">
-              Chats
-            </Text>
-            {userName && (
-              <Text style={themed($headerSubtitle)} size="xs">
-                {userName}
-              </Text>
-            )}
-          </View>
-          <TouchableOpacity
-            style={themed($logoutButton)}
-            onPress={handleLogout}
-            activeOpacity={0.7}
-          >
-            <Icon icon="x" size={24} color={theme.colors.text} />
-          </TouchableOpacity>
-        </View>
+      <Screen preset="fixed" safeAreaEdges={[]}>
         <View style={themed($loadingContainer)}>
           <ActivityIndicator size="large" color={theme.colors.tint} />
         </View>
@@ -173,26 +149,7 @@ export default function RoomsScreen() {
 
   if (error && rooms.length === 0) {
     return (
-      <Screen preset="fixed" safeAreaEdges={["top"]}>
-        <View style={themed($header)}>
-          <View style={themed($headerContent)}>
-            <Text style={themed($headerTitle)} preset="heading">
-              Chats
-            </Text>
-            {userName && (
-              <Text style={themed($headerSubtitle)} size="xs">
-                {userName}
-              </Text>
-            )}
-          </View>
-          <TouchableOpacity
-            style={themed($logoutButton)}
-            onPress={handleLogout}
-            activeOpacity={0.7}
-          >
-            <Icon icon="x" size={24} color={theme.colors.text} />
-          </TouchableOpacity>
-        </View>
+      <Screen preset="fixed" safeAreaEdges={[]}>
         <View style={themed($errorContainer)}>
           <Text style={themed($errorText)}>{error}</Text>
           <TouchableOpacity
@@ -208,27 +165,7 @@ export default function RoomsScreen() {
   }
 
   return (
-    <Screen preset="fixed" safeAreaEdges={["top"]} contentContainerStyle={themed($screenContainer)}>
-      <View style={themed($header)}>
-        <View style={themed($headerContent)}>
-          <Text style={themed($headerTitle)} preset="heading">
-            Chats
-          </Text>
-          {userName && (
-            <Text style={themed($headerSubtitle)} size="xs">
-              {userName}
-            </Text>
-          )}
-        </View>
-        <TouchableOpacity
-          style={themed($logoutButton)}
-          onPress={handleLogout}
-          activeOpacity={0.7}
-        >
-          <Icon icon="x" size={24} color={theme.colors.text} />
-        </TouchableOpacity>
-      </View>
-
+    <Screen preset="fixed" safeAreaEdges={[]} contentContainerStyle={themed($screenContainer)}>
       <FlatList
         data={rooms}
         keyExtractor={(item) => item.id}
@@ -275,29 +212,6 @@ const $retryButton: ThemedStyle<ViewStyle> = ({ spacing, colors }) => ({
 
 const $retryButtonText: ThemedStyle<TextStyle> = ({ colors }) => ({
   color: colors.palette.neutral100,
-})
-
-const $header: ThemedStyle<ViewStyle> = ({ spacing, colors }) => ({
-  flexDirection: "row",
-  justifyContent: "space-between",
-  alignItems: "center",
-  paddingHorizontal: spacing.lg,
-  paddingVertical: spacing.md,
-  backgroundColor: colors.background,
-})
-
-const $headerContent: ThemedStyle<ViewStyle> = () => ({
-  flex: 1,
-})
-
-const $headerTitle: ThemedStyle<TextStyle> = () => ({})
-
-const $headerSubtitle: ThemedStyle<TextStyle> = ({ colors }) => ({
-  color: colors.textDim,
-})
-
-const $logoutButton: ThemedStyle<ViewStyle> = ({ spacing }) => ({
-  padding: spacing.xs,
 })
 
 const $roomsList: ThemedStyle<ViewStyle> = ({ spacing }) => ({

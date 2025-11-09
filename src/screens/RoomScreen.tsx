@@ -224,7 +224,7 @@ export default function RoomScreen({ roomId }: RoomScreenProps) {
 
   if (loading) {
     return (
-      <Screen preset="fixed" safeAreaEdges={["top"]}>
+      <Screen preset="fixed" safeAreaEdges={[]}>
         <View style={themed($loadingContainer)}>
           <ActivityIndicator size="large" color={theme.colors.tint} />
         </View>
@@ -234,7 +234,7 @@ export default function RoomScreen({ roomId }: RoomScreenProps) {
 
   if (error || !room) {
     return (
-      <Screen preset="fixed" safeAreaEdges={["top"]}>
+      <Screen preset="fixed" safeAreaEdges={[]}>
         <View style={themed($errorContainer)}>
           <Icon icon="x" size={64} color={theme.colors.error} />
           <Text style={themed($errorText)}>{error || "Room not found"}</Text>
@@ -256,7 +256,7 @@ export default function RoomScreen({ roomId }: RoomScreenProps) {
   }
 
   return (
-    <Screen preset="fixed" safeAreaEdges={["top"]} contentContainerStyle={themed($screenContainer)}>
+    <Screen preset="fixed" safeAreaEdges={[]} contentContainerStyle={themed($screenContainer)}>
       {/* Header */}
       <View style={themed($header)}>
         <TouchableOpacity onPress={() => router.back()} style={themed($headerBackButton)}>
