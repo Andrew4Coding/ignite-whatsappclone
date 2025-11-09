@@ -158,7 +158,7 @@ export class Api {
    * Sends a new message to a room
    */
   async addMessage(
-    message: Omit<Message, "id" | "createdAt" | "roomId">,
+    message: Omit<Message, "id" | "roomId">,
     roomId: string,
   ): Promise<GetMessageResult> {
     // make the api call

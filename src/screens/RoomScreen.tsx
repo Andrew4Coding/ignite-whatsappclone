@@ -45,87 +45,89 @@ export default function RoomScreen({ roomId }: RoomScreenProps) {
   }, [isAuthenticated, router])
 
   // Fetch room and messages
+  const fetchData = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+
+    try {
+      // Fetch room details
+      console.log("Fetching room details for roomId:", roomId)
+      const roomResult = await api.getRoom(roomId)
+      if (roomResult.kind === "ok") {
+        setRoom(roomResult.room)
+      } else {
+        setError("Failed to load room")
+        return
+      }
+
+      // Fetch messages
+      const messagesResult = await api.getMessages(roomId)
+
+      if (messagesResult.kind === "ok") {
+        console.log("Raw messages from API:", JSON.stringify(messagesResult.messages, null, 2))
+
+        // Map the API response to our Message type
+        const mappedMessages = messagesResult.messages.map((msg: any) => {
+          console.log("Processing message:", {
+            id: msg.id,
+            content: msg.content,
+            message: msg.message,
+            createdAt: msg.createdAt,
+          })
+
+          return {
+            id: msg.id,
+            roomId: msg.RoomId || roomId,
+            content: msg.message || msg.content || "", // API uses 'message' field
+            senderId: msg.senderId || msg.id,
+            senderName: msg.name || msg.senderName || "", // API uses 'name' field
+            senderAvatar: msg.avatar || msg.senderAvatar || "",
+            type: msg.type || "text",
+            status: msg.status || "sent",
+            createdAt: msg.createdAt || new Date().toISOString(),
+            updatedAt: msg.updatedAt || msg.createdAt || new Date().toISOString(),
+            message: msg.message || msg.content || "",
+            name: msg.name || msg.senderName || "",
+          }
+        })
+
+        // Sort messages by createdAt timestamp (oldest first)
+        const sortedMessages = mappedMessages.sort((a, b) => {
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        })
+
+        console.log(
+          "Sorted messages:",
+          sortedMessages.map((m) => ({
+            id: m.id,
+            content: m.content,
+            createdAt: m.createdAt,
+            time: new Date(m.createdAt).toLocaleTimeString(),
+          })),
+        )
+
+        setMessages(sortedMessages)
+      } else {
+        setError("Failed to load messages")
+      }
+    } catch (e) {
+      setError("An error occurred")
+      if (__DEV__) {
+        console.tron.log(e)
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [roomId])
+
   useEffect(() => {
     if (!roomId) return
 
     // Log Current Time
     console.log("Current Time:", new Date().toISOString())
 
-    const fetchData = async () => {
-      setLoading(true)
-      setError(null)
-
-      try {
-        // Fetch room details
-        console.log("Fetching room details for roomId:", roomId)
-        const roomResult = await api.getRoom(roomId)
-        if (roomResult.kind === "ok") {
-          setRoom(roomResult.room)
-        } else {
-          setError("Failed to load room")
-          return
-        }
-
-        // Fetch messages
-        const messagesResult = await api.getMessages(roomId)
-
-        if (messagesResult.kind === "ok") {
-          console.log("Raw messages from API:", JSON.stringify(messagesResult.messages, null, 2))
-
-          // Map the API response to our Message type
-          const mappedMessages = messagesResult.messages.map((msg: any) => {
-            console.log("Processing message:", {
-              id: msg.id,
-              content: msg.content,
-              message: msg.message,
-              createdAt: msg.createdAt,
-            })
-
-            return {
-              id: msg.id,
-              roomId: msg.RoomId || roomId,
-              content: msg.content || msg.message || "",
-              senderId: msg.senderId || msg.id,
-              senderName: msg.senderName || msg.name || "",
-              senderAvatar: msg.senderAvatar || msg.avatar || "",
-              type: msg.type || "text",
-              status: msg.status || "sent",
-              createdAt: msg.createdAt || new Date().toISOString(),
-              updatedAt: msg.updatedAt || msg.createdAt || new Date().toISOString(),
-            }
-          })
-
-          // Sort messages by createdAt timestamp (oldest first)
-          const sortedMessages = mappedMessages.sort((a, b) => {
-            return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-          })
-
-          console.log(
-            "Sorted messages:",
-            sortedMessages.map((m) => ({
-              id: m.id,
-              content: m.content,
-              createdAt: m.createdAt,
-              time: new Date(m.createdAt).toLocaleTimeString(),
-            })),
-          )
-
-          setMessages(sortedMessages)
-        } else {
-          setError("Failed to load messages")
-        }
-      } catch (e) {
-        setError("An error occurred")
-        if (__DEV__) {
-          console.tron.log(e)
-        }
-      } finally {
-        setLoading(false)
-      }
-    }
-
     fetchData()
-  }, [roomId])
+  }, [roomId, fetchData])
 
   const sendMessage = useCallback(async () => {
     if (!messageText.trim() || !roomId || !userId || !userName) return
@@ -141,6 +143,7 @@ export default function RoomScreen({ roomId }: RoomScreenProps) {
           status: "sent",
           message: messageText,
           name: userName,
+          createdAt: new Date().toISOString(),
         },
         roomId,
       )
@@ -152,15 +155,17 @@ export default function RoomScreen({ roomId }: RoomScreenProps) {
         const mappedMessage = {
           id: result.message.id,
           roomId: (result.message as any).RoomId || roomId,
-          content: result.message.content || (result.message as any).message || messageText,
+          content: (result.message as any).message || result.message.content || messageText,
           senderId: result.message.senderId || userId,
-          senderName: result.message.senderName || (result.message as any).name || userName,
-          senderAvatar: result.message.senderAvatar || (result.message as any).avatar || "",
+          senderName: (result.message as any).name || result.message.senderName || userName,
+          senderAvatar: (result.message as any).avatar || result.message.senderAvatar || "",
           type: result.message.type || "text",
           status: result.message.status || "sent",
           createdAt: result.message.createdAt || new Date().toISOString(),
           updatedAt:
             result.message.updatedAt || result.message.createdAt || new Date().toISOString(),
+          message: (result.message as any).message || result.message.content || messageText,
+          name: (result.message as any).name || result.message.senderName || userName,
         }
 
         console.log("Mapped message to add:", {
@@ -231,14 +236,20 @@ export default function RoomScreen({ roomId }: RoomScreenProps) {
     return (
       <Screen preset="fixed" safeAreaEdges={["top"]}>
         <View style={themed($errorContainer)}>
+          <Icon icon="x" size={64} color={theme.colors.error} />
           <Text style={themed($errorText)}>{error || "Room not found"}</Text>
-          <TouchableOpacity
-            style={themed($backButton)}
-            onPress={() => router.back()}
-            activeOpacity={0.7}
-          >
-            <Text style={themed($backButtonText)}>Go Back</Text>
-          </TouchableOpacity>
+          <View style={themed($errorButtons)}>
+            <TouchableOpacity style={themed($retryButton)} onPress={fetchData} activeOpacity={0.7}>
+              <Text style={themed($retryButtonText)}>Retry</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={themed($backButton)}
+              onPress={() => router.back()}
+              activeOpacity={0.7}
+            >
+              <Text style={themed($backButtonText)}>Go Back</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </Screen>
     )
@@ -333,10 +344,26 @@ const $errorText: ThemedStyle<TextStyle> = ({ spacing, colors }) => ({
   textAlign: "center",
 })
 
-const $backButton: ThemedStyle<ViewStyle> = ({ spacing, colors }) => ({
+const $errorButtons: ThemedStyle<ViewStyle> = ({ spacing }) => ({
+  flexDirection: "row",
+  gap: spacing.sm,
+})
+
+const $retryButton: ThemedStyle<ViewStyle> = ({ spacing, colors }) => ({
   paddingVertical: spacing.xs,
   paddingHorizontal: spacing.md,
   backgroundColor: colors.palette.primary600,
+  borderRadius: 8,
+})
+
+const $retryButtonText: ThemedStyle<TextStyle> = ({ colors }) => ({
+  color: colors.palette.neutral100,
+})
+
+const $backButton: ThemedStyle<ViewStyle> = ({ spacing, colors }) => ({
+  paddingVertical: spacing.xs,
+  paddingHorizontal: spacing.md,
+  backgroundColor: colors.palette.neutral400,
   borderRadius: 8,
 })
 
