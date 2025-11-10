@@ -1,4 +1,3 @@
-import { useRouter } from "expo-router"
 import { useCallback, useEffect, useState } from "react"
 import {
   ActivityIndicator,
@@ -10,6 +9,7 @@ import {
   View,
   ViewStyle,
 } from "react-native"
+import { useRouter } from "expo-router"
 
 import { Icon } from "@/components/Icon"
 import { Screen } from "@/components/Screen"
@@ -64,23 +64,14 @@ export default function RoomScreen({ roomId }: RoomScreenProps) {
       const messagesResult = await api.getMessages(roomId)
 
       if (messagesResult.kind === "ok") {
-        console.log("Raw messages from API:", JSON.stringify(messagesResult.messages, null, 2))
-
         // Map the API response to our Message type
         const mappedMessages = messagesResult.messages.map((msg: any) => {
-          console.log("Processing message:", {
-            id: msg.id,
-            content: msg.content,
-            message: msg.message,
-            createdAt: msg.createdAt,
-          })
-
           return {
             id: msg.id,
             roomId: msg.RoomId || roomId,
-            content: msg.message || msg.content || "", // API uses 'message' field
+            content: msg.message || msg.content || "",
             senderId: msg.senderId || msg.id,
-            senderName: msg.name || msg.senderName || "", // API uses 'name' field
+            senderName: msg.name || msg.senderName || "",
             senderAvatar: msg.avatar || msg.senderAvatar || "",
             type: msg.type || "text",
             status: msg.status || "sent",
@@ -91,7 +82,7 @@ export default function RoomScreen({ roomId }: RoomScreenProps) {
           }
         })
 
-        // Sort messages by createdAt timestamp (oldest first)
+        // Sort messages by createdAt timestamp
         const sortedMessages = mappedMessages.sort((a, b) => {
           return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
         })
@@ -122,10 +113,6 @@ export default function RoomScreen({ roomId }: RoomScreenProps) {
 
   useEffect(() => {
     if (!roomId) return
-
-    // Log Current Time
-    console.log("Current Time:", new Date().toISOString())
-
     fetchData()
   }, [roomId, fetchData])
 
@@ -149,9 +136,6 @@ export default function RoomScreen({ roomId }: RoomScreenProps) {
       )
 
       if (result.kind === "ok") {
-        console.log("Message sent, API response:", JSON.stringify(result.message, null, 2))
-
-        // Map the response to our Message type
         const mappedMessage = {
           id: result.message.id,
           roomId: (result.message as any).RoomId || roomId,
@@ -167,13 +151,6 @@ export default function RoomScreen({ roomId }: RoomScreenProps) {
           message: (result.message as any).message || result.message.content || messageText,
           name: (result.message as any).name || result.message.senderName || userName,
         }
-
-        console.log("Mapped message to add:", {
-          id: mappedMessage.id,
-          content: mappedMessage.content,
-          createdAt: mappedMessage.createdAt,
-          time: new Date(mappedMessage.createdAt).toLocaleTimeString(),
-        })
 
         setMessages((prev) => [...prev, mappedMessage])
         setMessageText("")
@@ -192,7 +169,6 @@ export default function RoomScreen({ roomId }: RoomScreenProps) {
 
   const renderMessage: ListRenderItem<Message> = useCallback(
     ({ item }) => {
-      // Check if message is from the current user
       const isOwnMessage = item.senderId === userId
 
       return (
